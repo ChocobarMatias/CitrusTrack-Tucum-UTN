@@ -1,22 +1,17 @@
-const express = require('express');
-const app = express();
-const PORT = process.env.PORT || 3000;
+const app = require("./src/app");
+const dotenv = require("dotenv");
+dotenv.config();
 
-// Middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+
+const PORT = process.env.PORT || 3000;
 
 // Basic route
 app.get('/', (req, res) => {
-  res.json({ message: 'Welcome to CitrusTrack Backend API' });
+  res.json({ message: 'Bienvenido a la API Backend de CitrusTrack' });
 });
 
-// Health check route
-app.get('/health', (req, res) => {
-  res.json({ status: 'OK', timestamp: new Date().toISOString() });
-});
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+  console.log(`Puerto de escucha: ${PORT}`);
 });
