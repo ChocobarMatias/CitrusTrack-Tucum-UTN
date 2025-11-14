@@ -27,7 +27,7 @@ const loginUser = (req, res) => {
                 return res.status(401).json({ message: 'Contraseña incorrecta' });
             }
            if(email === user.email && passwordMatch){
-            const token = jwt.sign({ id: user.id, email: user.email }, 
+            const token = jwt.sign({ id: user.id, email: user.email, role: user.Rol }, 
                 process.env.JWT_SECRET, 
                 { expiresIn: '1h' });
             return res.json({ "Inicio de sesión Exitoso ": token });}else {
