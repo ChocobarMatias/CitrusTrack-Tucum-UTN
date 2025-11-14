@@ -1,118 +1,61 @@
-const {pool} = require('../config/db');
-const {hashPassword} = require('../utils/hash.utils');
+const { hashPassword } = require('../utils/hash.utils');
+const { queryWithResults, queryOne, queryMutation } = require('../utils/db.helper');
 
-const getAllUsuarios = (req,res)=>{
-    
-const sql = 'SELECT * FROM usuarios where estado = 1';
-
-pool.query(sql, (err, results) => {
-    if (err) {
-      console.error('Error al verificar el Usuario:', err);
-      return res.status(500).json({ error: 'Internal Server Error' });
-    }
-
-    if( results.length === 0 ){
-      return res.status(404).json({ message: 'No se encontraron usuarios activos' });
-    }
-
-    if(results.length > 0){
-
+const getAllUsuarios = async (req, res, next) => {
+  try {
+    const sql = 'SELECT * FROM usuarios WHERE estado = 1';
+    const results = await queryWithResults(sql, [], 'No se encontraron usuarios activos');
     res.json(results);
-    }else{
-      res.status(404).json({ message: 'No se encontraron usuarios activos' });
-    }
-  });
+  } catch (error) {
+    next(error);
+  }
 };
 
-const getUsuarioById = (req,res)=>{
-
-    const {id} = req.params;
-
+const getUsuarioById = async (req, res, next) => {
+  try {
+    const { id } = req.params;
     const sql = 'SELECT * FROM usuarios WHERE id = ? AND estado = 1';
-    pool.query(sql, [id], (err, results) => {
-        if (err) {
-          console.error('Error al obtener el usuario por ID:', err);
-          return res.status(500).json({ error: 'Internal Server Error' });
-        }
-        if (results.length === 0) {
-            return res.status(404).json({ message: 'Usuario no encontrado' });
-        }
-
-        if(results[0].estado !== 1){
-          return res.status(404).json({ message: 'Usuario no encontrado' });
-        }
-
-        if(results.length > 0){
-
-        res.json(results[0]);}else{
-            res.status(404).json({ message: 'Usuario no encontrado' });
-        }
-      });
+    const usuario = await queryOne(sql, [id], 'Usuario no encontrado');
+    res.json(usuario);
+  } catch (error) {
+    next(error);
+  }
 };
 
-const createUsuario = (req,res)=>{
-
-    const {nombre, email, password} = req.body;
-
-    // Hash the password before storing it
+const createUsuario = async (req, res, next) => {
+  try {
+    const { nombre, email, password } = req.body;
     const hashedPassword = hashPassword(password);
-
     const sql = 'INSERT INTO usuarios (nombre, email, password, estado) VALUES (?, ?, ?, ?)';
-
-    pool.query(sql, [nombre, email, hashedPassword,1], (err, results) => {
-        if (err) {
-          console.error('Error al crear el usuario:', err);
-          return res.status(500).json({ error: 'Internal Server Error' });
-        }
-        if(results.affectedRows === 0){
-          return res.status(400).json({ message: 'No se pudo crear el usuario' });
-        }
-        if(results.affectedRows > 0){   
-
-        res.status(201).json({ message: 'Usuario creado exitosamente', userId: results.insertId });
-        }else{
-          res.status(400).json({ message: 'No se pudo crear el usuario' });
-        }
-      });
+    const results = await queryMutation(sql, [nombre, email, hashedPassword, 1], 'No se pudo crear el usuario');
+    res.status(201).json({ message: 'Usuario creado exitosamente', userId: results.insertId });
+  } catch (error) {
+    next(error);
+  }
 };
 
-const updateUsuario = (req,res)=>{
-    const {id} = req.params;
-    const {nombre, email, password} = req.body;
+const updateUsuario = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { nombre, email, password } = req.body;
     const hashedPassword = hashPassword(password);
     const sql = 'UPDATE usuarios SET nombre = ?, email = ?, password = ? WHERE id = ? AND estado = 1';
-
-    pool.query(sql, [nombre, email, hashedPassword, id], (err, results) => {
-        if (err) {
-          console.error('Error al actualizar el usuario:', err);
-          return res.status(500).json({ error: 'Internal Server Error' });
-        }
-        if(results.affectedRows === 0){
-          return res.status(404).json({ message: 'Usuario no encontrado o no se pudo actualizar' });
-        }
-        if(results.affectedRows > 0){
-          res.json({ message: 'Usuario actualizado exitosamente' });
-        }
-      });
+    await queryMutation(sql, [nombre, email, hashedPassword, id], 'Usuario no encontrado o no se pudo actualizar', 404);
+    res.json({ message: 'Usuario actualizado exitosamente' });
+  } catch (error) {
+    next(error);
+  }
 };
 
-const deleteUsuario = (req,res)=>{
-    const {id} = req.params;
-
+const deleteUsuario = async (req, res, next) => {
+  try {
+    const { id } = req.params;
     const sql = 'UPDATE usuarios SET estado = 0 WHERE id = ? AND estado = 1';
-    pool.query(sql, [id], (err, results) => {
-        if (err) {
-            console.error('Error al eliminar el usuario:', err);
-            return res.status(500).json({ error: 'Internal Server Error' });
-        }
-        if(results.affectedRows === 0){
-          return res.status(404).json({ message: 'Usuario no encontrado o ya eliminado' });
-        }
-        if(results.affectedRows > 0){
-          res.json({ message: 'Usuario eliminado exitosamente' });
-        }
-    });
+    await queryMutation(sql, [id], 'Usuario no encontrado o ya eliminado', 404);
+    res.json({ message: 'Usuario eliminado exitosamente' });
+  } catch (error) {
+    next(error);
+  }
 };
 
-
-module.exports = {getAllUsuarios,getUsuarioById,createUsuario,updateUsuario,deleteUsuario}
+module.exports = { getAllUsuarios, getUsuarioById, createUsuario, updateUsuario, deleteUsuario };
