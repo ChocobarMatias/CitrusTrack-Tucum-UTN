@@ -8,7 +8,7 @@ const loginUser = (req, res) => {
 
     const {email, password} = req.body;
 
-    const sql = 'SELECT * FROM usuarios WHERE email = ? AND estado = 1';
+    const sql = 'SELECT * FROM usuarios WHERE email = ? AND activo = 1';
 
     pool.query(sql, [email], (err, results) => {
         if (err) {
